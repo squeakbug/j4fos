@@ -36,6 +36,7 @@ bss_clear:
     la t0, kmain
 	csrw mepc, t0
 
+.extern kmain
     call kmain
 
 finish:
@@ -45,3 +46,5 @@ debug_message:
     .string "[DEBUG]\n\r"
 
 .size _entry, . - _entry
+stack0:
+    .space 16384

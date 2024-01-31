@@ -1,4 +1,11 @@
 OUTPUT_ARCH( "riscv" )
+
+MEMORY
+{
+   /* qemu-system-risc64 virt machine */
+   RAM (rwx)  : ORIGIN = 0x80000000, LENGTH = 128M 
+}
+
 ENTRY( _entry )
 
 SECTIONS
