@@ -1,0 +1,12 @@
+[package]
+name = "dev"
+version = "0.0.1"
+authors = ["squeakbug <squeakbug73@outlook.com>"]
+edition = "2021"
+
+[lib]
+name = "dev"
+path = "src/lib.rs"
+crate-type = ["staticlib"]
+
+[dependencies]

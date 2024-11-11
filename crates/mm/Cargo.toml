@@ -1,0 +1,22 @@
+[package]
+name = "mm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ctor = "0.2.8"
+rand = "0.8.5"
+spin = "0.9.8"
+bitflags = "2.6.0"
+types.workspace = true
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "one_thread"
+harness = false
+
+[[bench]]
+name = "one_thread_std"
+harness = false

@@ -1,4 +1,5 @@
 [toolchain]
+profile = "default"
 channel = "nightly"
-components = ["rustfmt", "rustc-dev", "rust-src", "clippy"]
-profile = "minimal"
+components = ["rustc-dev", "rust-src", "llvm-tools"]
+targets = ["x86_64-unknown-none", "riscv64gc-unknown-none-elf"]

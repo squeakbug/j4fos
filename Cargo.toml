@@ -1,17 +1,23 @@
-[package]
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/*"
+]
+
+[workspace.package]
 name = "arrakis"
 version = "0.0.1"
-authors = ["squeakbug73 <squeakbug73@outlook.com>"]
+authors = ["squeakbug <squeakbug73@outlook.com>"]
 edition = "2021"
+
+[workspace.dependencies]
+dev = { path = "crates/dev" }
+fs = { path = "crates/fs" }
+kernel = { path = "crates/kernel" }
+mm = { path = "crates/mm" }
+net = { path = "crates/net" }
+types = { path = "crates/types" }
 
 [profile.release]
 lto = true
-opt-level = 2
-codegen-units = 1
-
-[lib]
-name = "kernel"
-path = "src/lib.rs"
-crate-type = ["staticlib"]
-
-[dependencies]
