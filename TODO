@@ -1,0 +1,4 @@
+* write bitmask page allocator
+* describe task structure and implemnt system task and clock task
+* write fifo process scheduler as a separate service
+* move from gnu binutils to llvm binutils

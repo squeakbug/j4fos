@@ -1,17 +1,19 @@
 # Goal
 
 ## Цель
-1 Приемник в VHF дипазоне
+
+Приемник в VHF дипазоне
 
 ## Задачи 
-1 Добиться полного использования Ethernet канала
-2 Довести проект до конца:
-    2.1 OS kernel
-    2.2 Messaging IPC
-    2.3 RISC-V core
-    2.4 Bus arbiter
-    2.5 MAC and MII layers
-    2.6 DSP core
+
+1. Добиться полного использования Ethernet канала
+2. Довести проект до конца:
+    1. OS kernel
+    2. Messaging IPC
+    3. RISC-V core
+    4. Bus arbiter
+    5. MAC and MII layers
+    6. DSP core
 
 Can be part of project, but too amazing
 * GSM Core

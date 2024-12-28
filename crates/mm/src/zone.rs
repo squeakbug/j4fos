@@ -7,8 +7,10 @@ use std::{
 
 use types::linked_list;
 
-const MAX_PAGE_ORDER: usize = 10;
-const _NR_PAGE_ORDER: usize = 10;
+pub const PAGE_SHIFT: usize = 12;
+pub const PAGE_SIZE: usize = 1 << PAGE_SHIFT;
+pub const MAX_PAGE_ORDER: usize = 10;
+pub const _NR_PAGE_ORDER: usize = 10;
 
 pub struct Zone {
     free_area: [linked_list::List; MAX_PAGE_ORDER],
@@ -17,8 +19,25 @@ pub struct Zone {
     _present_pages: usize,
 }
 
-pub(crate) fn prev_power_of_two(num: usize) -> usize {
-    1 << (usize::BITS as usize - num.leading_zeros() as usize - 1)
+pub(crate) fn prev_two_order(num: usize) -> usize {
+    usize::BITS as usize - num.leading_zeros() as usize - 1
+}
+
+pub(crate) fn _prev_power_of_two(num: usize) -> usize {
+    1 << prev_two_order(num)
+}
+
+pub fn next_aligned_by(address: usize, alignment: usize) -> usize {
+    if alignment == 0 {
+        panic!("Alignment must be a positive integer.");
+    }
+
+    let remainder = address & (alignment - 1);
+    address + (alignment - remainder) * (remainder != 0) as usize
+}
+
+pub fn prev_aligned_by(address: usize, alignment: usize) -> usize {
+    address & (!alignment + 1)
 }
 
 impl Zone {
@@ -30,30 +49,44 @@ impl Zone {
         }
     }
 
+    pub fn managed_pages(&self) -> usize {
+        self._managed_pages
+    }
+
+    pub fn present_pages(&self) -> usize {
+        self._present_pages
+    }
+
     pub const fn empty() -> Self {
         Self::new()
     }
 
     pub unsafe fn add_to_heap(&mut self, mut start: usize, mut end: usize) {
-        start = (start + size_of::<usize>() - 1) & (!size_of::<usize>() + 1);
-        end &= !size_of::<usize>() + 1;
+        use types::linked_list::ListHead;
+        
+        start = next_aligned_by(start, PAGE_SIZE);
+        end = prev_aligned_by(end, PAGE_SIZE);
         assert!(start <= end);
 
         let mut current_start = start;
-
-        while current_start + size_of::<usize>() <= end {
-            let lowbit = current_start & (!current_start + 1);
-            let mut size = min(lowbit, prev_power_of_two(end - current_start));
-
-            let mut order = size.trailing_zeros() as usize;
+        while current_start + PAGE_SIZE <= end {
+            let mut order = prev_two_order(end - current_start) - PAGE_SHIFT;
             if order > MAX_PAGE_ORDER - 1 {
                 order = MAX_PAGE_ORDER - 1;
-                size = 1 << order;
             }
 
+            println!("{:?}", *(current_start as *mut ListHead));
+
             self.free_area[order].push_front(current_start as *mut usize);
-            current_start += size;
+            current_start += 1 << (order + PAGE_SHIFT);
+
+            println!("{:?}", self);
+            println!("end = {}; current_start = {}", 
+                end,
+                current_start
+            );
         }
+        println!("");
     }
 
     pub unsafe fn init(&mut self, start: usize, size: usize) {
@@ -132,7 +165,22 @@ impl Zone {
 
 impl fmt::Debug for Zone {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let sizes = self.free_area.iter().map(|area| area.count()).collect::<Vec<_>>();
         fmt.debug_struct(std::any::type_name::<Self>())
+            .field("managed", &self._managed_pages)
+            .field("present", &self._present_pages)
+            .field("sizes", &sizes)
             .finish()
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    pub fn test_align_by() {
+        assert_eq!(next_aligned_by(0x1234, 0x1000), 0x2000);
+        assert_eq!(prev_aligned_by(0x1234, 0x1000), 0x1000);
     }
 }
