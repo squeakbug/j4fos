@@ -43,8 +43,8 @@ fn test_push_pop() {
 fn test_push_after_pop() {
     let mut memory = vec![0usize; 1024];
 
-    let value1 = (&mut memory[0])  as *mut usize;
-    let value2 = (&mut memory[8])  as *mut usize;
+    let value1 = (&mut memory[0]) as *mut usize;
+    let value2 = (&mut memory[8]) as *mut usize;
 
     let mut list = linked_list::List::new();
     let mut push_pop = || {

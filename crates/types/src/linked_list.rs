@@ -38,16 +38,14 @@ impl List {
         self.head.is_null()
     }
 
-    pub fn push_front(&mut self, item: *mut usize) { 
-        let litem = item as *mut ListHead;      
+    pub fn push_front(&mut self, item: *mut usize) {
+        let litem = item as *mut ListHead;
 
         unsafe {
             if self.head.is_null() {
                 self.head = item;
                 (*litem).next = litem;
-                println!("Hello world!");
                 (*litem).prev = litem;
-                println!("Hello world!");
             } else {
                 let lhead = self.head as *mut ListHead;
                 (*litem).next = lhead;

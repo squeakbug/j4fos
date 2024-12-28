@@ -1,7 +1,5 @@
 use std::{
-    alloc::Layout,
-    cmp::{min, max}, fmt,
-    mem::size_of,
+    cmp::min, fmt,
     ptr::NonNull,
 };
 
@@ -62,11 +60,9 @@ impl Zone {
     }
 
     pub unsafe fn add_to_heap(&mut self, mut start: usize, mut end: usize) {
-        use types::linked_list::ListHead;
-        
         start = next_aligned_by(start, PAGE_SIZE);
         end = prev_aligned_by(end, PAGE_SIZE);
-        assert!(start <= end);
+        assert!(start < end);
 
         let mut current_start = start;
         while current_start + PAGE_SIZE <= end {
@@ -75,35 +71,22 @@ impl Zone {
                 order = MAX_PAGE_ORDER - 1;
             }
 
-            println!("{:?}", *(current_start as *mut ListHead));
-
             self.free_area[order].push_front(current_start as *mut usize);
-            current_start += 1 << (order + PAGE_SHIFT);
 
-            println!("{:?}", self);
-            println!("end = {}; current_start = {}", 
-                end,
-                current_start
-            );
+            let allocated_pages = 1 << order;
+            self._managed_pages += allocated_pages;
+
+            let allocated = allocated_pages << PAGE_SHIFT;
+            current_start += allocated;
         }
-        println!("");
     }
 
-    pub unsafe fn init(&mut self, start: usize, size: usize) {
-        self.add_to_heap(start, start + size);
-    }
-
-    pub fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, ()> {
-        let size = max(
-            layout.size().next_power_of_two(),
-            max(layout.align(), size_of::<usize>()),
-        );
-        let class = size.trailing_zeros() as usize;
-        for i in class..self.free_area.len() {
+    pub fn alloc_pages(&mut self, order: usize) -> Result<NonNull<u8>, ()> {
+        for i in order..self.free_area.len() {
             if !self.free_area[i].is_empty() {
-                for j in (class + 1..i + 1).rev() {
+                for j in (order + 1..i + 1).rev() {
                     if let Some(block) = self.free_area[j].pop_front() {
-                        let block_new_size = 1 << (j - 1);
+                        let block_new_size = 1 << (j - 1) << PAGE_SHIFT;
                         self.free_area[j - 1]
                             .push_front((block as usize + block_new_size) as *mut usize);
                         self.free_area[j - 1].push_front(block);
@@ -113,7 +96,7 @@ impl Zone {
                 }
 
                 let result = NonNull::new(
-                    self.free_area[class]
+                    self.free_area[order]
                         .pop_front()
                         .expect("current block should have free space now")
                         as *mut u8,
@@ -128,22 +111,19 @@ impl Zone {
         Err(())
     }
 
-    pub fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        let size = max(
-            layout.size().next_power_of_two(),
-            max(layout.align(), size_of::<usize>()),
-        );
-        let class = size.trailing_zeros() as usize;
+    pub fn alloc_pages_exact(&mut self, _size: usize) -> Result<NonNull<u8>, ()> {
+        todo!()
+    }
 
-        self.free_area[class].push_front(ptr.as_ptr() as *mut usize);
+    pub fn free_pages(&mut self, ptr: NonNull<u8>, order: usize) {
+        self.free_area[order].push_front(ptr.as_ptr() as *mut usize);
 
         let mut current_ptr = ptr.as_ptr() as usize;
-        let mut current_class = class;
-
-        while current_class < self.free_area.len() - 1 {
-            let buddy = current_ptr ^ (1 << current_class);
+        let mut current_order = order;
+        while current_order < self.free_area.len() - 1 {
+            let buddy = current_ptr ^ (1 << current_order << PAGE_SHIFT);
             let mut buddy2 = None;
-            for block in self.free_area[current_class].iter() {
+            for block in self.free_area[current_order].iter() {
                 if block as usize == buddy {
                     buddy2 = Some(block);
                     break;
@@ -151,15 +131,23 @@ impl Zone {
             }
 
             if let Some(buddy2) = buddy2 {
-                self.free_area[current_class].pop(buddy2);
-                self.free_area[current_class].pop_front();
+                self.free_area[current_order].pop(buddy2);
+                self.free_area[current_order].pop_front();
                 current_ptr = min(current_ptr, buddy);
-                current_class += 1;
-                self.free_area[current_class].push_front(current_ptr as *mut usize);
+                current_order += 1;
+                self.free_area[current_order].push_front(current_ptr as *mut usize);
             } else {
                 break;
             }
         }
+    }
+
+    pub fn free_pages_exact(
+        &mut self, 
+        _ptr: NonNull<u8>, 
+        _size: usize
+    ) -> Result<NonNull<u8>, ()> {
+        todo!()
     }
 }
 
