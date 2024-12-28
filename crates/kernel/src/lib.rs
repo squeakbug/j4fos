@@ -34,7 +34,6 @@ pub unsafe extern "C" fn kmain() -> ! {
 	}
 }
 
-/// This function is called on panic.
 #[panic_handler]
 #[no_mangle]
 fn panic(_info: &PanicInfo) -> ! {
