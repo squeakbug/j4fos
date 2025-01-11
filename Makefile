@@ -24,7 +24,7 @@ KERNEL_LIB_OUT := $(KERNEL_LIBS)/libkernel.a
 KERNEL_LIB_ASM := kernel_lib.S
 RUSTFLAGS := -C soft-float -C panic=abort
 
-LDSCRIPT := $(KERNEL_SRC)/kernel.ld
+LDSCRIPT := $(KERNEL_SRC)/linker/kernel.ld
 LDFLAGS    = -z max-page-size=0x1000 --gc-sections -Map map.txt
 
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2

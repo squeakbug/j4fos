@@ -1,4 +1,6 @@
-use core::{fmt, ptr};
+use core::{
+    {fmt, ptr}
+};
 
 #[derive(Copy, Clone)]
 pub struct List {
@@ -16,7 +18,7 @@ pub struct ListHead {
 
 impl fmt::Debug for ListHead {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct(std::any::type_name::<Self>())
+        fmt.debug_struct(core::any::type_name::<Self>())
             .field("next", &self.next)
             .field("prev", &self.prev)
             .finish()

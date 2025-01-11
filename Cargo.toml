@@ -19,5 +19,8 @@ mm = { path = "crates/mm" }
 net = { path = "crates/net" }
 types = { path = "crates/types" }
 
+spin = "0.9.8"
+bitflags = "2.6.0"
+
 [profile.release]
 lto = true

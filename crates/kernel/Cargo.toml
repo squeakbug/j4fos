@@ -10,3 +10,8 @@ path = "src/lib.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
+dev.workspace = true
+fs.workspace = true
+mm.workspace = true
+net.workspace = true
+types.workspace = true

@@ -1,4 +1,4 @@
-use std::{
+use core::{
     cmp::min, fmt,
     ptr::NonNull,
 };
@@ -66,10 +66,10 @@ impl Zone {
 
         let mut current_start = start;
         while current_start + PAGE_SIZE <= end {
-            let mut order = prev_two_order(end - current_start) - PAGE_SHIFT;
-            if order > MAX_PAGE_ORDER - 1 {
-                order = MAX_PAGE_ORDER - 1;
-            }
+             let mut order = prev_two_order(end - current_start) - PAGE_SHIFT;
+             if order > MAX_PAGE_ORDER - 1 {
+                 order = MAX_PAGE_ORDER - 1;
+             }
 
             self.free_area[order].push_front(current_start as *mut usize);
 
@@ -153,8 +153,11 @@ impl Zone {
 
 impl fmt::Debug for Zone {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let sizes = self.free_area.iter().map(|area| area.count()).collect::<Vec<_>>();
-        fmt.debug_struct(std::any::type_name::<Self>())
+        let sizes = &mut [0usize; MAX_PAGE_ORDER];
+        for (i, area) in self.free_area.iter().enumerate() {
+            sizes[i] = area.count();
+        }
+        fmt.debug_struct(core::any::type_name::<Self>())
             .field("managed", &self._managed_pages)
             .field("present", &self._present_pages)
             .field("sizes", &sizes)
