@@ -1,4 +1,3 @@
-#![no_main]
 #![no_std]
 
 pub mod linked_list;

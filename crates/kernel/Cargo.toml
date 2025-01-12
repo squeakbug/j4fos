@@ -15,3 +15,6 @@ fs.workspace = true
 mm.workspace = true
 net.workspace = true
 types.workspace = true
+
+[features]
+with_std = [ "mm/with_std" ]

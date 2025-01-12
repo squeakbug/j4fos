@@ -8,3 +8,8 @@ spin.workspace = true
 bitflags.workspace = true
 types.workspace = true
 dev.workspace = true
+
+jemallocator = { version = "0.5.4" , optional = true }
+
+[features]
+with_std = [ "jemallocator" ]
