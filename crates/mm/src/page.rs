@@ -8,7 +8,8 @@ bitflags! {
 
 }
 
+#[derive(Copy, Clone)]
 pub struct Page {
-    pub flags: PageFlags,
     pub use_count: usize,
+    pub order: usize,
 }

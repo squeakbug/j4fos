@@ -37,11 +37,13 @@ pub fn _print(args: fmt::Arguments) {
     GLOBAL_TTY.lock().write_fmt(args).unwrap();
 }
 
+#[cfg(not(feature = "with_std"))]
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::console::_print(format_args!($($arg)*)));
 }
 
+#[cfg(not(feature = "with_std"))]
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));

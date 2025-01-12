@@ -1,4 +1,4 @@
-use mm::zone::{Zone, PAGE_SIZE, next_aligned_by};
+use mm::zone::{next_aligned_by, Zone, PAGE_SHIFT, PAGE_SIZE};
 
 #[test]
 fn test_empty_heap() {
@@ -70,13 +70,13 @@ fn test_heap_alloc_and_free() {
 
 #[test]
 fn test_heap_alloc_and_free_different_sizes() {
-    let mut heap = vec![0u8; PAGE_SIZE << 5];
+    let mut heap = vec![0u8; PAGE_SIZE << 7];
     let mut zone = Zone::new();
     unsafe {
         let start_heap = (&mut heap[0]) as *mut u8;
         zone.add_to_heap(
-            next_aligned_by(start_heap as usize, PAGE_SIZE), 
-            next_aligned_by(start_heap.add(PAGE_SIZE << 5) as usize, PAGE_SIZE)
+            next_aligned_by(start_heap as usize, PAGE_SIZE << 5), 
+            next_aligned_by(start_heap.add(PAGE_SIZE << 5) as usize, PAGE_SIZE << 5)
         );
     }
     for order in 0..5 {
@@ -87,14 +87,13 @@ fn test_heap_alloc_and_free_different_sizes() {
 
 #[test]
 fn test_heap_alloc_and_free_different_sizes_lowering() {
-    let mut heap = vec![0u8; PAGE_SIZE << 5];
+    let mut heap = vec![0u8; PAGE_SIZE << 7];
     let mut zone = Zone::new();
     unsafe {
         let start_heap = (&mut heap[0]) as *mut u8;
-        zone.add_to_heap(
-            next_aligned_by(start_heap as usize, PAGE_SIZE), 
-            next_aligned_by(start_heap.add(PAGE_SIZE << 5) as usize, PAGE_SIZE)
-        );
+        let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 6);
+        let end = start + (std::mem::size_of::<usize>() << PAGE_SHIFT << 6);
+        zone.add_to_heap(start, end);
     }
     for order in (0..6).rev() {
         let addr = zone.alloc_pages(order).unwrap();

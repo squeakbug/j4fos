@@ -12,4 +12,4 @@ dev.workspace = true
 jemallocator = { version = "0.5.4" , optional = true }
 
 [features]
-with_std = [ "jemallocator" ]
+with_std = [ "jemallocator", "dev/with_std" ]

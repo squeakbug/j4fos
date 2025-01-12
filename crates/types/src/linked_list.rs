@@ -1,22 +1,25 @@
 use core::{
-    {fmt, ptr}
+    {fmt, ptr},
+    marker::PhantomData,
 };
 
 #[derive(Copy, Clone)]
-pub struct List {
-    head: *mut usize,
+pub struct List<T> {
+    head: *mut ListHead<T>,
+    phantom: PhantomData<T>
 }
 
 // TODO: minimum size of object must be specified by type system
 // This is intrusive list, so it's worth considering
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct ListHead {
-    next: *mut ListHead,
-    prev: *mut ListHead,
+pub struct ListHead<T> {
+    pub next: *mut ListHead<T>,
+    pub prev: *mut ListHead<T>,
+    pub data: T,
 }
 
-impl fmt::Debug for ListHead {
+impl<T> fmt::Debug for ListHead<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct(core::any::type_name::<Self>())
             .field("next", &self.next)
@@ -25,10 +28,11 @@ impl fmt::Debug for ListHead {
     }
 }
 
-impl List {
-    pub const fn new() -> List {
+impl<T> List<T> {
+    pub const fn new() -> List<T> {
         List {
             head: ptr::null_mut(),
+            phantom: PhantomData,
         }
     }
 
@@ -40,8 +44,8 @@ impl List {
         self.head.is_null()
     }
 
-    pub fn push_front(&mut self, item: *mut usize) {
-        let litem = item as *mut ListHead;
+    pub fn push_front(&mut self, item: *mut ListHead<T>) {
+        let litem = item as *mut ListHead<T>;
 
         unsafe {
             if self.head.is_null() {
@@ -49,60 +53,60 @@ impl List {
                 (*litem).next = litem;
                 (*litem).prev = litem;
             } else {
-                let lhead = self.head as *mut ListHead;
+                let lhead = self.head as *mut ListHead<T>;
                 (*litem).next = lhead;
                 (*litem).prev = (*lhead).prev;
 
-                let lprev = (*lhead).prev as *mut ListHead;
+                let lprev = (*lhead).prev as *mut ListHead<T>;
                 (*lhead).prev = litem;
                 (*lprev).next = litem;
             }
         }
     }
 
-    pub fn pop_front(&mut self) -> Option<*mut usize> {
+    pub fn pop_front(&mut self) -> Option<*mut ListHead<T>> {
         match self.is_empty() {
             true => None,
             false => unsafe {
-                let lhead = self.head as *mut ListHead;
-                let litem = (*lhead).prev as *mut ListHead;
+                let lhead = self.head as *mut ListHead<T>;
+                let litem = (*lhead).prev as *mut ListHead<T>;
 
                 if litem == lhead {
                     (*lhead).next = ptr::null_mut();
                     (*lhead).prev = ptr::null_mut();
                     self.head = ptr::null_mut();
-                    Some(lhead as *mut usize)
+                    Some(lhead)
                 } else {
-                    let lnew_prev = (*litem).prev as *mut ListHead;
+                    let lnew_prev = (*litem).prev as *mut ListHead<T>;
                     (*lnew_prev).next = lhead;
                     (*lhead).prev = lnew_prev;
-                    if self.head == litem as *mut usize {
+                    if self.head == litem {
                         self.head = ptr::null_mut();
                     }
 
                     (*litem).next = ptr::null_mut();
                     (*litem).prev = ptr::null_mut();
-                    Some(litem as *mut usize)
+                    Some(litem)
                 }
             }
         }
     }
 
-    pub fn pop(&mut self, list_head: *mut usize) -> Option<*mut usize> {
+    pub fn pop(&mut self, list_head: *mut ListHead<T>) -> Option<*mut ListHead<T>> {
         match self.is_empty() {
             true => None,
             false => unsafe {
-                let lhead = list_head as *mut ListHead;
+                let lhead = list_head as *mut ListHead<T>;
                 let lnext = (*lhead).next;
                 let lprev = (*lhead).prev;
                 (*lnext).prev = lprev;
                 (*lprev).next = lnext;
 
-                if self.head == lhead as *mut usize {
+                if self.head == lhead{
                     self.head = if (*lhead).next == lhead {
                         ptr::null_mut()
                     } else { 
-                        (*lhead).next as *mut usize
+                        (*lhead).next
                     }
                 }
 
@@ -111,43 +115,45 @@ impl List {
         }
     }
 
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<T> {
         Iter {
             head: self.head,
             passed: false,
             curr: self.head,
+            phantom: PhantomData,
         }
     }
 }
 
-unsafe impl Send for List {}
+unsafe impl<T> Send for List<T> {}
 
-impl fmt::Debug for List {
+impl<T> fmt::Debug for List<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
-pub struct Iter {
-    head: *mut usize,
+pub struct Iter<T> {
+    head: *mut ListHead<T>,
     passed: bool,
-    curr: *mut usize,
+    curr: *mut ListHead<T>,
+    phantom: PhantomData<T>,
 }
 
-impl Iterator for Iter {
-    type Item = *mut usize;
+impl<T> Iterator for Iter<T> {
+    type Item = *mut ListHead<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.head.is_null() {
             return None
         } else {
-            let litem = self.curr as *const ListHead;
-            if litem == self.head as *const ListHead && self.passed {
+            let litem = self.curr as *mut ListHead<T>;
+            if litem == self.head as *mut ListHead<T> && self.passed {
                 None
             } else {
                 self.passed = true;
-                self.curr = unsafe { (*litem).next } as *mut usize;
-                Some(litem as *mut usize)
+                self.curr = unsafe { (*litem).next };
+                Some(litem)
             }
         }
     }
