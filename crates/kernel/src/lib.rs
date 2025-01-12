@@ -1,6 +1,8 @@
 #![no_main]
 #![no_std]
 
+mod task;
+
 use core::panic::PanicInfo;
 
 use dev::uart16550::{putchar, UART_BASE};

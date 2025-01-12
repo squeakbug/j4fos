@@ -22,25 +22,10 @@ TARGET_PATH := ./target/$(TARGET)/$(TYPE)
 KERNEL_LIBS := $(TARGET_PATH)
 KERNEL_LIB_OUT := $(KERNEL_LIBS)/libkernel.a
 KERNEL_LIB_ASM := kernel_lib.S
-RUSTFLAGS := -C soft-float -C panic=abort
+RUSTFLAGS = -C soft-float -C panic=abort
 
 LDSCRIPT := $(KERNEL_SRC)/linker/kernel.ld
 LDFLAGS    = -z max-page-size=0x1000 --gc-sections -Map map.txt
-
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
-CFLAGS += -MD
-CFLAGS += -Wl,--gc-sections -mcmodel=medany -march=rv64gc
-CFLAGS += -Wl,--no-warn-rwx-segments
-CFLAGS += -ffreestanding -nostartfiles -nostdlib -nodefaultlibs -fno-common -mno-relax
-CFLAGS += -I.
-CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-
-ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
-CFLAGS += -fno-pie -no-pie
-endif
-ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
-CFLAGS += -fno-pie -nopie
-endif
 
 # ---------------
 # Kernel building (TODO: move to build.rs structure)
