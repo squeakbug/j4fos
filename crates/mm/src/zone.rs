@@ -174,7 +174,7 @@ impl Zone {
             let buddy = current_ptr ^ (1 << current_order << PAGE_SHIFT);
             let buddy_first_page_indx = (buddy as usize - self.zone_start) / PAGE_SIZE;
 
-            if self.pages[buddy_first_page_indx].use_count == 1 
+            if self.pages[buddy_first_page_indx].use_count == 0
                 && self.pages[buddy_first_page_indx].order == current_order {
 
                 self.mark_pages_as_allocated(buddy as *mut u8, current_order);

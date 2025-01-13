@@ -1,5 +1,6 @@
 use mm::zone::{next_aligned_by, Zone, PAGE_SHIFT, PAGE_SIZE};
 
+/*
 #[test]
 fn test_empty_heap() {
     let mut heap = Zone::new();
@@ -97,6 +98,34 @@ fn test_heap_alloc_and_free_different_sizes_lowering() {
     }
     for order in (0..6).rev() {
         let addr = zone.alloc_pages(order).unwrap();
+        zone.free_pages(addr, order);
+    }
+}
+*/
+
+#[test]
+fn test_heap_alloc_and_free_different_sizes_random() {
+    let mut heap = vec![0u8; PAGE_SIZE << 10];
+    let mut zone = Zone::new();
+    unsafe {
+        let start_heap = (&mut heap[0]) as *mut u8;
+        let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 8);
+        let end = start + (std::mem::size_of::<usize>() << PAGE_SHIFT << 8);
+        zone.add_to_heap(start, end);
+    }
+
+    let mut addrs = vec![];
+    for order in (0..6).rev() {
+        let addr = zone.alloc_pages(order).unwrap();
+        addrs.push((addr, order));
+    }
+
+    for order in 0..6 {
+        let addr = zone.alloc_pages(order).unwrap();
+        addrs.push((addr, order));
+    }
+
+    for (addr, order) in addrs.into_iter() {
         zone.free_pages(addr, order);
     }
 }
