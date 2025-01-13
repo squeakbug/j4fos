@@ -3,7 +3,7 @@
 ## Run tests
 
 ```sh
-cargo test --package mm --features with_std
+cargo test --package mm --features with_std -- --test-threads=1 --nocapture
 ```
 
 ## References

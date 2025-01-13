@@ -172,6 +172,9 @@ impl Zone {
         let mut current_order = order;
         while current_order < self.free_area.len() - 1 {
             let buddy = current_ptr ^ (1 << current_order << PAGE_SHIFT);
+
+            // println!("buddy = {:#x}; current_ptr = {:#x}", buddy, current_ptr);
+
             let buddy_first_page_indx = (buddy as usize - self.zone_start) / PAGE_SIZE;
 
             if self.pages[buddy_first_page_indx].use_count == 0
