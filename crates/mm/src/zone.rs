@@ -29,6 +29,7 @@ pub(crate) fn _prev_power_of_two(num: usize) -> usize {
     1 << prev_two_order(num)
 }
 
+// TODO: can be much more efficient
 pub fn next_aligned_by(address: usize, alignment: usize) -> usize {
     let remainder = address & (alignment - 1);
     address + (alignment - remainder) * (remainder != 0) as usize
@@ -83,7 +84,7 @@ impl Zone {
     ) -> Option<*mut ListHead<usize>> {
         let result = self.free_area[order].pop(ptr as *mut ListHead<usize>);
         if let Some(addr) = result {
-            let start_page_indx = (addr as usize - self.zone_start) / PAGE_SIZE;
+            let start_page_indx = (addr as usize - self.zone_start) >> PAGE_SHIFT;
             for i in 0..(1 << order) {
                 self.pages[start_page_indx + i].inc_use_count();
             }
@@ -227,6 +228,8 @@ pub mod tests {
 
     #[test]
     pub fn test_align_by() {
+        assert_eq!(next_aligned_by(0x0, 0x1000), 0x0);
+        assert_eq!(next_aligned_by(0x1000, 0x1000), 0x1000);
         assert_eq!(next_aligned_by(0x1234, 0x1000), 0x2000);
         assert_eq!(prev_aligned_by(0x1234, 0x1000), 0x1000);
     }
