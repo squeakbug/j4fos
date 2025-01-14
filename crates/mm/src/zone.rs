@@ -30,10 +30,6 @@ pub(crate) fn _prev_power_of_two(num: usize) -> usize {
 }
 
 pub fn next_aligned_by(address: usize, alignment: usize) -> usize {
-    if alignment == 0 {
-        panic!("Alignment must be a positive integer.");
-    }
-
     let remainder = address & (alignment - 1);
     address + (alignment - remainder) * (remainder != 0) as usize
 }
@@ -44,13 +40,9 @@ pub fn prev_aligned_by(address: usize, alignment: usize) -> usize {
 
 impl Zone {
     pub const fn new() -> Self {
-        let empty_page = Page {
-            use_count: 0,
-            order: 0,
-        };
         Zone {
             free_area: [linked_list::List::new(); MAX_PAGE_ORDER],
-            pages: [empty_page; MAX_PAGE_CNT],
+            pages: [Page::empty(); MAX_PAGE_CNT],
             zone_start: 0,
             zone_end: 0,
             _managed_pages: 0,
@@ -76,9 +68,9 @@ impl Zone {
     ) -> Option<*mut ListHead<usize>> {
         let result = self.free_area[order].pop_front();
         if let Some(addr) = result {
-            let start_page_indx = (addr as usize - self.zone_start) / PAGE_SIZE;
+            let start_page_indx = (addr as usize - self.zone_start) >> PAGE_SHIFT;
             for i in 0..(1 << order) {
-                self.pages[start_page_indx + i].use_count += 1;
+                self.pages[start_page_indx + i].inc_use_count();
             }
         }
         result
@@ -93,7 +85,7 @@ impl Zone {
         if let Some(addr) = result {
             let start_page_indx = (addr as usize - self.zone_start) / PAGE_SIZE;
             for i in 0..(1 << order) {
-                self.pages[start_page_indx + i].use_count += 1;
+                self.pages[start_page_indx + i].inc_use_count();
             }
         }
         result
@@ -101,10 +93,10 @@ impl Zone {
 
     fn mark_pages_as_free(&mut self, ptr: *mut u8, order: usize) {
         self.free_area[order].push_front(ptr as *mut ListHead<usize>);
-        let start_page_indx = (ptr as usize - self.zone_start) / PAGE_SIZE;
+        let start_page_indx = (ptr as usize - self.zone_start) >> PAGE_SHIFT;
         for i in 0..(1 << order) {
-            self.pages[start_page_indx + i].use_count -= 1;
-            self.pages[start_page_indx + i].order = order;
+            self.pages[start_page_indx + i].dec_use_count();
+            self.pages[start_page_indx + i].set_order(order);
         }
     }
 
@@ -134,21 +126,34 @@ impl Zone {
     pub fn alloc_pages(&mut self, order: usize) -> Result<NonNull<u8>, ()> {
         for i in order..self.free_area.len() {
             if !self.free_area[i].is_empty() {
+                let mut block = None;
                 for j in (order + 1..i + 1).rev() {
-                    if let Some(block) = self.mark_first_pages_as_allocated(j) {
-                        let block_new_size = 1 << (j - 1) << PAGE_SHIFT;
-
-                        let buddy_block = (block as usize + block_new_size) as *mut ListHead<usize>;
-                        self.mark_pages_as_free(buddy_block as *mut u8, j - 1);
-                        self.mark_pages_as_free(block as *mut u8, j - 1);
+                    block = if block.is_none() {
+                        self.mark_first_pages_as_allocated(j)
                     } else {
-                        return Err(());
+                        block
+                    };
+                    match block {
+                        Some(block) => {
+                            let block_new_size = 1 << (j - 1) << PAGE_SHIFT;
+
+                            let buddy_block = (block as usize + block_new_size) as *mut ListHead<usize>;
+                            self.mark_pages_as_free(buddy_block as *mut u8, j - 1);
+                        },
+                        None => {
+                            return Err(());
+                        }
                     }
                 }
 
-                let alloc_start = self.mark_first_pages_as_allocated(order)
-                    .expect("current block should have free space now")
+                let alloc_start = match block {
+                    Some(block) => Some(block),
+                    None => {
+                        self.mark_first_pages_as_allocated(order)
+                    },
+                }.expect("current block should have free space now")
                     as *mut u8;
+
                 let result = NonNull::new(alloc_start);
                 if let Some(result) = result {
                     return Ok(result);
@@ -172,13 +177,10 @@ impl Zone {
         let mut current_order = order;
         while current_order < self.free_area.len() - 1 {
             let buddy = current_ptr ^ (1 << current_order << PAGE_SHIFT);
-
-            // println!("buddy = {:#x}; current_ptr = {:#x}", buddy, current_ptr);
-
             let buddy_first_page_indx = (buddy as usize - self.zone_start) / PAGE_SIZE;
 
-            if self.pages[buddy_first_page_indx].use_count == 0
-                && self.pages[buddy_first_page_indx].order == current_order {
+            if self.pages[buddy_first_page_indx].get_use_count() == 0
+                && self.pages[buddy_first_page_indx].get_order() == current_order {
 
                 self.mark_pages_as_allocated(buddy as *mut u8, current_order);
                 self.mark_pages_as_allocated(current_ptr as *mut u8, current_order);

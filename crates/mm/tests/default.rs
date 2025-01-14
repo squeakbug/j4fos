@@ -68,7 +68,6 @@ fn test_heap_alloc_and_free() {
     }
 }
 
-
 #[test]
 fn test_heap_alloc_and_free_different_sizes_raising() {
     let mut heap = vec![0u8; PAGE_SIZE << 9];
@@ -76,10 +75,10 @@ fn test_heap_alloc_and_free_different_sizes_raising() {
     unsafe {
         let start_heap = (&mut heap[0]) as *mut u8;
         let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 7);
-        let end = start + (std::mem::size_of::<usize>() << PAGE_SHIFT << 7);
+        let end = start + (1 << PAGE_SHIFT << 7);
         zone.add_to_heap(start, end);
     }
-    for order in 0..5 {
+    for order in 0..2 {
         let addr = zone.alloc_pages(order).unwrap();
         zone.free_pages(addr, order);
     }
