@@ -53,7 +53,7 @@ fn test_heap_oom() {
 
 #[test]
 fn test_heap_alloc_and_free() {
-    let mut heap = vec![0u8; PAGE_SIZE << 9];
+    let mut heap = vec![0u8; (PAGE_SIZE << 10) + PAGE_SIZE];
     let mut zone = Zone::new();
     unsafe {
         let start_heap = (&mut heap[0]) as *mut u8;
@@ -70,12 +70,12 @@ fn test_heap_alloc_and_free() {
 
 #[test]
 fn test_heap_alloc_and_free_different_sizes_raising() {
-    let mut heap = vec![0u8; PAGE_SIZE << 9];
+    let mut heap = vec![0u8; (PAGE_SIZE << 10) + PAGE_SIZE];
     let mut zone = Zone::new();
     unsafe {
-        let start_heap = (&mut heap[0]) as *mut u8;
-        let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 7);
-        let end = start + (1 << PAGE_SHIFT << 7);
+        let start_heap = (&mut heap[0]) as *mut u8 as usize;
+        let start = next_aligned_by(start_heap, PAGE_SIZE);
+        let end = start + (1 << PAGE_SHIFT << 10);
         zone.add_to_heap(start, end);
     }
     for order in 0..2 {
@@ -86,12 +86,12 @@ fn test_heap_alloc_and_free_different_sizes_raising() {
 
 #[test]
 fn test_heap_alloc_and_free_different_sizes_lowering() {
-    let mut heap = vec![0u8; PAGE_SIZE << 9];
+    let mut heap = vec![0u8; (PAGE_SIZE << 10) + PAGE_SIZE];
     let mut zone = Zone::new();
     unsafe {
-        let start_heap = (&mut heap[0]) as *mut u8;
-        let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 7);
-        let end = start + (std::mem::size_of::<usize>() << PAGE_SHIFT << 7);
+        let start_heap = (&mut heap[0]) as *mut u8 as usize;
+        let start = next_aligned_by(start_heap, PAGE_SIZE);
+        let end = start + (1 << PAGE_SHIFT << 10);
         zone.add_to_heap(start, end);
     }
     for order in (0..5).rev() {
@@ -102,12 +102,12 @@ fn test_heap_alloc_and_free_different_sizes_lowering() {
 
 #[test]
 fn test_heap_alloc_and_free_different_sizes_random() {
-    let mut heap = vec![0u8; PAGE_SIZE << 10];
+    let mut heap = vec![0u8; (PAGE_SIZE << 10) + PAGE_SIZE];
     let mut zone = Zone::new();
     unsafe {
-        let start_heap = (&mut heap[0]) as *mut u8;
-        let start = next_aligned_by(start_heap as usize, PAGE_SIZE << 8);
-        let end = start + (std::mem::size_of::<usize>() << PAGE_SHIFT << 8);
+        let start_heap = (&mut heap[0]) as *mut u8 as usize;
+        let start = next_aligned_by(start_heap, PAGE_SIZE);
+        let end = start + (PAGE_SIZE << 10);
         zone.add_to_heap(start, end);
     }
 

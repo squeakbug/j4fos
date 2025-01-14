@@ -176,12 +176,13 @@ impl Zone {
         let mut current_ptr = ptr.as_ptr() as usize;
         let mut current_order = order;
         while current_order < self.free_area.len() - 1 {
-            let buddy = current_ptr ^ (1 << current_order << PAGE_SHIFT);
-            let buddy_first_page_indx = (buddy as usize - self.zone_start) / PAGE_SIZE;
+            let current_index = (current_ptr - self.zone_start) >> PAGE_SHIFT;
+            let buddy_indx = current_index ^ (1 << current_order);
 
-            if self.pages[buddy_first_page_indx].get_use_count() == 0
-                && self.pages[buddy_first_page_indx].get_order() == current_order {
+            if self.pages[buddy_indx].get_use_count() == 0
+                && self.pages[buddy_indx].get_order() == current_order {
 
+                let buddy = self.zone_start + (buddy_indx << PAGE_SHIFT);
                 self.mark_pages_as_allocated(buddy as *mut u8, current_order);
                 self.mark_pages_as_allocated(current_ptr as *mut u8, current_order);
 
